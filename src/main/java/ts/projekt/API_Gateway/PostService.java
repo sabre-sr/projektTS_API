@@ -15,24 +15,27 @@ import java.util.stream.Collectors;
 
 @RestController
 public class PostService {
-    private static final ObjectMapper mapper = new ObjectMapper();
-
-
     @GetMapping(path = "/posts")
     public ArrayList<Post> getAllPosts() {
-        WebClient webClient = WebClient.builder()
+        WebClient clientPosts = WebClient.builder()
                 .baseUrl("http://localhost:8082/get-posts")
                 .build();
-        ArrayList<Post> response = webClient.get()
+        ArrayList<Post> response = clientPosts.get()
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<ArrayList<Post>>() {})
                 .block();
+        for (int i=0; i<response.size(); i++) {
+            WebClient clientUser = WebClient.builder()
+                    .baseUrl(String.format("http://localhost:8081/users/%d", response.get(i).author.getId()))
+                    .build();
+            User temp = clientUser.get()
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<User>() {})
+                    .block();
+            response.get(i).setAuthor(temp);
+        }
         return response;
-//        Object[] objects = response.block();
-//        assert objects != null;
-//        return Arrays.stream(objects)
-//                .map(object -> mapper.convertValue(object, Post.class))
-//                .collect(Collectors.toList());
     }
 }
