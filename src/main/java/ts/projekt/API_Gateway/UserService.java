@@ -2,10 +2,7 @@ package ts.projekt.API_Gateway;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @RestController
@@ -33,4 +30,8 @@ public class UserService {
                 .block();
     }
 
+    @PostMapping(path = "register")
+    public void register(AuthUser user) {
+
+    }
 }
