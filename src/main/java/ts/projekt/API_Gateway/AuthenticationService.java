@@ -1,11 +1,30 @@
 package ts.projekt.API_Gateway;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import javassist.bytecode.ByteArray;
 import net.minidev.json.JSONObject;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.function.ServerResponse;
 import reactor.core.publisher.Mono;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Predicate;
 
 @RestController
 public class AuthenticationService {
@@ -38,16 +57,39 @@ public class AuthenticationService {
     }
 
     @PostMapping(path = "login")
-    public User login(AuthUser loginCred) {
-        WebClient authUrl = WebClient.builder()
-                .baseUrl("http://localhost:8081/login")
-                .build();
-        return authUrl.post()
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .body(Mono.just(loginCred), AuthUser.class)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<User>() {})
-                .block();
+    public User login(@RequestBody AuthUser loginCred) throws IOException {
+        ObjectMapper mapper =new ObjectMapper();
+        String json = mapper.writeValueAsString(loginCred);
+        URL url = new URL("http://localhost:8083/login");
+        HttpURLConnection con = (HttpURLConnection)url.openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; utf-8");
+        con.setRequestProperty("Accept", "application/json");
+        con.setDoOutput(true);
+        try (OutputStream os = con.getOutputStream()) {
+            byte[] input = json.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+        try(BufferedReader br = new BufferedReader(
+                new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+            StringBuilder response = new StringBuilder();
+            String responseLine = null;
+            while ((responseLine = br.readLine()) != null) {
+                response.append(responseLine.trim());
+            }
+            System.out.println(response.toString());
+        }
+        int response = con.getResponseCode();
+        if (response == 200) {
+            WebClient clientUser = WebClient.builder()
+                    .baseUrl(String.format("http://localhost:8081/users/%d", loginCred.getId()))
+                    .build();
+            return clientUser.get()
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<User>() {})
+                    .block();
+        }
+        return null;
     }
 }
