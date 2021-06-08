@@ -11,7 +11,7 @@ public class Post implements Serializable {
     private int id;
     private String postBody;
     private LocalDate creationDate;
-
+    private Post repliedTo;
 
     public Post() {
     }
@@ -21,6 +21,26 @@ public class Post implements Serializable {
         this.id = id;
         this.postBody = postBody;
         this.creationDate = creationDate;
+    }
+
+    public Post(User author, int id, String postBody, LocalDate creationDate, Post repliedTo) {
+        this.author = author;
+        this.id = id;
+        this.postBody = postBody;
+        this.creationDate = creationDate;
+        this.repliedTo = repliedTo;
+    }
+
+    public Post(User author, String postBody, Post repliedTo) {
+        this.author = author;
+        this.postBody = postBody;
+        this.repliedTo = repliedTo;
+    }
+
+    public Post(User author, String postBody) {
+        this.author = author;
+        this.postBody = postBody;
+        this.repliedTo = null;
     }
 
     public User getAuthor() {
@@ -53,5 +73,13 @@ public class Post implements Serializable {
 
     public void setCreationDate(LocalDate creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public Post getRepliedTo() {
+        return repliedTo;
+    }
+
+    public void setRepliedTo(Post repliedTo) {
+        this.repliedTo = repliedTo;
     }
 }
