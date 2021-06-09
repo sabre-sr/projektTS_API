@@ -1,10 +1,14 @@
 package ts.projekt.API_Gateway;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.coyote.Response;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -79,5 +83,32 @@ public class AuthenticationService {
                     .block();
         }
         return null;
+    }
+
+    @PostMapping(path = "register")
+    public void register(@RequestBody AuthUser user) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl("http://localhost:8081/register")
+                .build();
+        User temp = webClient.post()
+                .body(Mono.just(user), User.class)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<User>() {})
+                .block();
+        if (temp == null || temp.getId() == 0)
+            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Couldn't create valid user in user database.");
+        else {
+            user.setId(temp.getId());
+            webClient = WebClient.builder()
+                    .baseUrl("http://localhost:8081/register")
+                    .build();
+            AuthUser temp2 = webClient.post()
+                    .body(Mono.just(user), AuthUser.class)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<AuthUser>() {})
+                    .block();
+            if (temp2 == null || temp2.getId() == 0)
+                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Couldn't create valid user in auth database.");
+        }
     }
 }

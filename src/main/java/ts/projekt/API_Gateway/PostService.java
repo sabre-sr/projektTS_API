@@ -50,6 +50,6 @@ public class PostService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Post>() {})
                 .block();
-
     }
+
 }

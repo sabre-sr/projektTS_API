@@ -29,9 +29,4 @@ public class UserService {
                 .bodyToMono(new ParameterizedTypeReference<User>() {})
                 .block();
     }
-
-    @PostMapping(path = "register")
-    public void register(AuthUser user) {
-
-    }
 }
