@@ -2,12 +2,26 @@ package ts.projekt.API_Gateway;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.BodyInserter;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
+import org.springframework.util.MultiValueMap;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Array;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,6 +30,12 @@ import java.util.stream.Collectors;
 
 @RestController
 public class PostService {
+    private final HttpServletRequest request;
+
+    public PostService(HttpServletRequest request) {
+        this.request = request;
+    }
+
     @GetMapping(path = "/posts")
     public ArrayList<Post> getAllPosts() {
         WebClient clientPosts = WebClient.builder()
@@ -26,7 +46,7 @@ public class PostService {
     @PostMapping(path = "/addPost")
     public Post addPost(@RequestBody Post post) {
         WebClient postClient = WebClient.builder()
-                .baseUrl("http://localhost:8082")
+                .baseUrl("http://localhost:8082/addpost")
                 .build();
         return postClient.post()
                 .body(Mono.just(post), Post.class)
@@ -60,5 +80,36 @@ public class PostService {
             response.get(i).setAuthor(temp);
         }
         return response;
+    }
+    @PostMapping(path = "uploadFile")
+    public Post uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
+        WebClient postClient = WebClient.builder()
+                .baseUrl("http://localhost:8082/uploadFile")
+                .build();
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        if (!file.isEmpty()) {
+            String uploadsDir = "/temp/";
+            String realPathtoUploads = request.getServletContext().getRealPath(uploadsDir);
+            if (!new File(realPathtoUploads).exists()) {
+                new File(realPathtoUploads).mkdir();
+            }
+            String orgName = file.getOriginalFilename();
+            String filePath = realPathtoUploads + orgName;
+            File dest = new File(filePath);
+            file.transferTo(dest);
+            return postClient.post()
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(fromFile(dest)))
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Post>() {})
+                    .block();
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
+    }
+
+    public MultiValueMap<String, HttpEntity<?>> fromFile(File file) {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("file", new FileSystemResource(file));
+        return builder.build();
     }
 }

@@ -12,8 +12,13 @@ public class Post implements Serializable {
     private String postBody;
     private LocalDate creationDate;
     private Post repliedTo;
+    private String filename;
 
     public Post() {
+    }
+
+    public Post(int id) {
+        this.id = id;
     }
 
     public Post(User author, int id, String postBody, LocalDate creationDate) {
@@ -81,5 +86,13 @@ public class Post implements Serializable {
 
     public void setRepliedTo(Post repliedTo) {
         this.repliedTo = repliedTo;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 }
