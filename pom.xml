@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>ts.projekt</groupId>
-	<artifactId>API_Gateway</artifactId>
+	<artifactId>api_gateway</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>API_Gateway</name>
+	<name>api_gateway</name>
 	<description>API Gateway dla projektu</description>
 	<properties>
 		<java.version>11</java.version>
