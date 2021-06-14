@@ -1,6 +1,8 @@
 package ts.projekt.API_Gateway;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
@@ -21,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +34,7 @@ import java.util.stream.Collectors;
 @RestController
 public class PostService {
     private final HttpServletRequest request;
-
+    private final static Logger log = LoggerFactory.getLogger(PostService.class);
     public PostService(HttpServletRequest request) {
         this.request = request;
     }
@@ -111,5 +114,17 @@ public class PostService {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("file", new FileSystemResource(file));
         return builder.build();
+    }
+
+    @GetMapping(path="getFile/{name}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public @ResponseBody byte[] getImage(@PathVariable String name) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl("http://localhost:8082/getFile/" + name)
+                .build();
+        return webClient.get()
+                .accept(MediaType.IMAGE_JPEG)
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .block();
     }
 }
