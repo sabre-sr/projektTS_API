@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
@@ -120,10 +121,18 @@ public class PostService {
     public @ResponseBody byte[] getImage(@PathVariable String name) {
         WebClient webClient = WebClient.builder()
                 .baseUrl("http://localhost:8082/getFile/" + name)
+                .exchangeStrategies(ExchangeStrategies.builder()
+                        .codecs(configurer -> configurer
+                        .defaultCodecs()
+                        .maxInMemorySize(16*1024*1024))
+                        .build())
                 .build();
         return webClient.get()
                 .accept(MediaType.IMAGE_JPEG)
                 .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post service encountered an error fetching the file.");
+                })
                 .bodyToMono(byte[].class)
                 .block();
     }
