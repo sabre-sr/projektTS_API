@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.util.MultiValueMap;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,6 +59,21 @@ public class PostService {
                 .bodyToMono(new ParameterizedTypeReference<Post>() {})
                 .block();
     }
+    @GetMapping(path="post/{id}")
+    public Post getPost(@PathVariable int id) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl("http://localhost:8082/post/"+id)
+                .build();
+        return webClient.get()
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+                })
+                .bodyToMono(new ParameterizedTypeReference<Post>() {})
+                .block();
+    }
+
     @GetMapping(path="replies/{id}")
     public ArrayList<Post> getReplies(@PathVariable int id) {
         WebClient clientPosts = WebClient.builder()
@@ -117,7 +133,9 @@ public class PostService {
         return builder.build();
     }
 
-    @GetMapping(path="getFile/{name}", produces = MediaType.IMAGE_JPEG_VALUE)
+    @GetMapping(path="getFile/{name}"
+            ,produces = MediaType.IMAGE_JPEG_VALUE
+    )
     public @ResponseBody byte[] getImage(@PathVariable String name) {
         WebClient webClient = WebClient.builder()
                 .baseUrl("http://localhost:8082/getFile/" + name)
@@ -127,7 +145,7 @@ public class PostService {
                         .maxInMemorySize(16*1024*1024))
                         .build())
                 .build();
-        return webClient.get()
+        byte[] temp = webClient.get()
                 .accept(MediaType.IMAGE_JPEG)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
@@ -135,5 +153,7 @@ public class PostService {
                 })
                 .bodyToMono(byte[].class)
                 .block();
+        ByteArrayInputStream is = new ByteArrayInputStream(temp);
+        return temp;
     }
 }

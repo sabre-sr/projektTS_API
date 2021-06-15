@@ -45,34 +45,26 @@ public class AuthenticationService {
                 .bodyToMono(new ParameterizedTypeReference<User>() {})
                 .block();
         assert user != null;
-        return getSalt(user.getId());
+        AuthUser temp = getSalt(user.getId());
+        return temp;
     }
 
     @PostMapping(path = "login")
     public User login(@RequestBody AuthUser loginCred) throws IOException {
-        ObjectMapper mapper =new ObjectMapper();
-        String json = mapper.writeValueAsString(loginCred);
-        URL url = new URL("http://localhost:8083/login");
-        HttpURLConnection con = (HttpURLConnection)url.openConnection();
-        con.setRequestMethod("POST");
-        con.setRequestProperty("Content-Type", "application/json; utf-8");
-        con.setRequestProperty("Accept", "application/json");
-        con.setDoOutput(true);
-        try (OutputStream os = con.getOutputStream()) {
-            byte[] input = json.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
-        }
-        try(BufferedReader br = new BufferedReader(
-                new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-            StringBuilder response = new StringBuilder();
-            String responseLine;
-            while ((responseLine = br.readLine()) != null) {
-                response.append(responseLine.trim());
-            }
-            System.out.println(response);
-        }
-        int response = con.getResponseCode();
-        if (response == 200) {
+        String uri = "http://localhost:8083/login/";
+        WebClient webClient = WebClient.builder()
+                .baseUrl(uri)
+                .build();
+        webClient.post()
+                .body(Mono.just(loginCred), AuthUser.class)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+                })
+                .bodyToMono(new ParameterizedTypeReference<AuthUser>() {
+                })
+                .block();
             WebClient clientUser = WebClient.builder()
                     .baseUrl(String.format("http://localhost:8081/users/%d", loginCred.getId()))
                     .build();
@@ -81,8 +73,6 @@ public class AuthenticationService {
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<User>() {})
                     .block();
-        }
-        return null;
     }
 
     @PostMapping(path = "register")
@@ -100,7 +90,7 @@ public class AuthenticationService {
         else {
             user.setId(temp.getId());
             webClient = WebClient.builder()
-                    .baseUrl("http://localhost:8081/register")
+                    .baseUrl("http://localhost:8083/register")
                     .build();
             AuthUser temp2 = webClient.post()
                     .body(Mono.just(user), AuthUser.class)

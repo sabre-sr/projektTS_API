@@ -48,6 +48,23 @@ public class Post implements Serializable {
         this.repliedTo = null;
     }
 
+    public Post(User author, int id, String postBody, LocalDate creationDate, Post repliedTo, String filename) {
+        this.author = author;
+        this.id = id;
+        this.postBody = postBody;
+        this.creationDate = creationDate;
+        this.repliedTo = repliedTo;
+        this.filename = filename;
+    }
+
+    public Post(User author, int id, String postBody, LocalDate creationDate, String filename) {
+        this.author = author;
+        this.id = id;
+        this.postBody = postBody;
+        this.creationDate = creationDate;
+        this.filename = filename;
+    }
+
     public User getAuthor() {
         return author;
     }

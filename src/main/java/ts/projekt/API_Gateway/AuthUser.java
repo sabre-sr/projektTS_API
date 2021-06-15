@@ -20,6 +20,12 @@ public class AuthUser extends User implements Serializable {
         this.salt = salt;
     }
 
+    public AuthUser(String username, String email, String hash, byte[] salt) {
+        super(username, email);
+        this.hash = hash;
+        this.salt = salt;
+    }
+
     public String getHash() {
         return hash;
     }
