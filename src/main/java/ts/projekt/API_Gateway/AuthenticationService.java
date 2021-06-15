@@ -34,6 +34,7 @@ public class AuthenticationService {
                 })
                 .block();
     }
+
     @GetMapping(path = "getsalt")
     public AuthUser getSalt(@RequestParam(name = "login") String login) {
         WebClient clientUser = WebClient.builder()
@@ -42,7 +43,8 @@ public class AuthenticationService {
         User user = clientUser.get()
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<User>() {})
+                .bodyToMono(new ParameterizedTypeReference<User>() {
+                })
                 .block();
         assert user != null;
         AuthUser temp = getSalt(user.getId());
@@ -65,14 +67,15 @@ public class AuthenticationService {
                 .bodyToMono(new ParameterizedTypeReference<AuthUser>() {
                 })
                 .block();
-            WebClient clientUser = WebClient.builder()
-                    .baseUrl(String.format("http://localhost:8081/users/%d", loginCred.getId()))
-                    .build();
-            return clientUser.get()
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<User>() {})
-                    .block();
+        WebClient clientUser = WebClient.builder()
+                .baseUrl(String.format("http://localhost:8081/users/%d", loginCred.getId()))
+                .build();
+        return clientUser.get()
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<User>() {
+                })
+                .block();
     }
 
     @PostMapping(path = "register")
@@ -83,7 +86,8 @@ public class AuthenticationService {
         User temp = webClient.post()
                 .body(Mono.just(user), User.class)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<User>() {})
+                .bodyToMono(new ParameterizedTypeReference<User>() {
+                })
                 .block();
         if (temp == null || temp.getId() == 0)
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Couldn't create valid user in user database.");
@@ -95,7 +99,8 @@ public class AuthenticationService {
             AuthUser temp2 = webClient.post()
                     .body(Mono.just(user), AuthUser.class)
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<AuthUser>() {})
+                    .bodyToMono(new ParameterizedTypeReference<AuthUser>() {
+                    })
                     .block();
             if (temp2 == null || temp2.getId() == 0)
                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Couldn't create valid user in auth database.");

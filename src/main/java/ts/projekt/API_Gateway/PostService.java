@@ -82,6 +82,21 @@ public class PostService {
         return getPostArray(clientPosts);
     }
 
+    @GetMapping(path="removePost/{id}")
+    public Post removePost(@PathVariable int id) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl("http://localhost:8082/post/"+id)
+                .build();
+        return webClient.delete()
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+                })
+                .bodyToMono(new ParameterizedTypeReference<Post>() {})
+                .block();
+    }
+
     private ArrayList<Post> getPostArray(WebClient clientPosts) {
         ArrayList<Post> response = clientPosts.get()
                 .accept(MediaType.APPLICATION_JSON)
